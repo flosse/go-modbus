@@ -6,28 +6,6 @@
 
 package modbus
 
-/* Modbus Error */
-
-type Error struct {
-
-	// Error Code
-	code uint8
-
-	// Exception Code
-	exception uint8
-}
-
-const PDU_LENGTH = 253
-
-type Pdu struct {
-
-	// Function Code
-	function uint8
-
-	// PDU data
-	data []byte
-}
-
 type Client interface {
 
 	/**************
