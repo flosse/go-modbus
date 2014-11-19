@@ -10,14 +10,25 @@ package modbus
 
 type Error struct {
 
-	// error code
+	// Error Code
 	code uint8
 
-	// exception code
+	// Exception Code
 	exception uint8
 }
 
-type Master interface {
+const PDU_LENGTH = 253
+
+type Pdu struct {
+
+	// Function Code
+	function uint8
+
+	// PDU data
+	data []byte
+}
+
+type Client interface {
 
 	/**************
 	 * Bit access *
@@ -58,7 +69,7 @@ type Master interface {
 	WriteMultipleRegisters(address, quantity uint16, values []int16) error
 
 	// Function Code 23
-	ReadWriteMultipleRegisters(readAddress, readQuantity, writeAddress, writeQuantity uint16, values []int16) (readValues []int16, err error)
+	ReadWriteMultipleRegisters(readAddress, readQuantity, writeAddress, writeQuantity uint16, values []int16) (readRegisters []int16, err error)
 
 	// Function Code 22
 	MaskWriteRegister(address uint16, andMask, orMask int16) error
@@ -80,6 +91,12 @@ type Master interface {
 
 }
 
-type Slave interface {
+type Handler interface {
+	Handle(req *Pdu) (res *Pdu)
+}
 
+type Server interface {
+	SetHandler(h *Handler)
+	Start() error
+	Stop() error
 }
