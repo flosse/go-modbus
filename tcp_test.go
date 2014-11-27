@@ -1,15 +1,15 @@
 package modbus
 
 import (
-	"testing"
 	"encoding/binary"
+	"testing"
 )
 
-func Test_Header_Pack(t *testing.T){
+func Test_Header_Pack(t *testing.T) {
 
-	bin := (&Header{1234,99,42,9}).Pack()
+	bin := (&Header{1234, 99, 42, 9}).Pack()
 
-  if len(bin) != 7 {
+	if len(bin) != 7 {
 		t.Error("invalid binary length")
 	}
 	if binary.BigEndian.Uint16(bin[0:2]) != 1234 {
@@ -26,13 +26,13 @@ func Test_Header_Pack(t *testing.T){
 	}
 }
 
-func Test_UnpackHeader(t *testing.T){
+func Test_UnpackHeader(t *testing.T) {
 
-	if _, err := UnpackHeader([]byte{0,0,0,0,0,0}); err == nil {
+	if _, err := UnpackHeader([]byte{0, 0, 0, 0, 0, 0}); err == nil {
 		t.Error("an error should be returned")
 	}
 
-	h, _ := UnpackHeader([]byte{0xff,0xff,0,5,0,3,9})
+	h, _ := UnpackHeader([]byte{0xff, 0xff, 0, 5, 0, 3, 9})
 	if h.transaction != 65535 {
 		t.Error("invalid transaction id")
 	}
@@ -47,10 +47,10 @@ func Test_UnpackHeader(t *testing.T){
 	}
 }
 
-func Test_Adu_Pack(t *testing.T){
-	h		:= &Header{1,2,3,4}
-	pdu	:= &Pdu{6,[]byte{2,4}}
-	adu	:= &Adu{h,pdu}
+func Test_Adu_Pack(t *testing.T) {
+	h := &Header{1, 2, 3, 4}
+	pdu := &Pdu{6, []byte{2, 4}}
+	adu := &Adu{h, pdu}
 	bin := adu.Pack()
 	if len(bin) != 10 {
 		t.Error("invalid binary length")
@@ -66,13 +66,13 @@ func Test_Adu_Pack(t *testing.T){
 	}
 }
 
-func Test_UnpackAdu(t *testing.T){
+func Test_UnpackAdu(t *testing.T) {
 
-	if _, err := UnpackAdu([]byte{0,0,0,0,0,0,0}); err == nil {
+	if _, err := UnpackAdu([]byte{0, 0, 0, 0, 0, 0, 0}); err == nil {
 		t.Error("an error should be returned")
 	}
 
-	adu,_ := UnpackAdu([]byte{0,0x0f,0,5,0,3,9,4,2})
+	adu, _ := UnpackAdu([]byte{0, 0x0f, 0, 5, 0, 3, 9, 4, 2})
 
 	if adu.header.transaction != 15 {
 		t.Error("invalid transaction id")

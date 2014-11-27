@@ -5,13 +5,17 @@
 package modbus
 
 import (
-	"errors"
+	"bytes"
 	"encoding/binary"
+	"errors"
+	"net"
+	"strconv"
 )
 
 const (
-	ADU_LENGTH    = 260
-	HEADER_LENGTH = 7
+	ADU_LENGTH      = 260
+	HEADER_LENGTH   = 7
+	TCP_PROTOCOL_ID = 0
 )
 
 type Header struct {
@@ -39,15 +43,9 @@ func (adu *Adu) Pack() []byte {
 }
 
 func (h *Header) Pack() []byte {
-	bin := make([]byte,7)
-	bin[0] = uint8(h.transaction>>8)
-	bin[1] = uint8(h.transaction&0xff)
-	bin[2] = uint8(h.protocol>>8)
-	bin[3] = uint8(h.protocol&0xff)
-	bin[4] = uint8(h.length>>8)
-	bin[5] = uint8(h.length&0xff)
-	bin[6] = h.unit
-	return bin
+	buff := bytes.NewBuffer([]byte{})
+	binary.Write(buff, binary.BigEndian, h)
+	return buff.Bytes()
 }
 
 func UnpackHeader(data []byte) (*Header, error) {
@@ -75,4 +73,57 @@ func UnpackAdu(data []byte) (*Adu, error) {
 		return nil, err
 	}
 	return &Adu{header, pdu}, nil
+}
+
+type TcpTransporter struct {
+	host        string
+	port        uint
+	connection  net.Conn
+	transaction uint16
+	id          uint8
+}
+
+func (t *TcpTransporter) Connect() error {
+	conn, err := net.Dial("tcp", t.host+":"+strconv.Itoa(int(t.port)))
+	if err != nil {
+		return err
+	}
+	t.connection = conn
+	return nil
+}
+
+func (t *TcpTransporter) Close() error {
+	if t.connection != nil {
+		return t.connection.Close()
+	}
+	return errors.New("Not connected")
+}
+
+func (t *TcpTransporter) Send(pdu *Pdu) (*Pdu, error) {
+	if t.connection == nil {
+		if err := t.Connect(); err != nil {
+			return nil, err
+		}
+	}
+	t.transaction++
+	header := &Header{t.transaction, TCP_PROTOCOL_ID, uint16(len(pdu.data) + 1), t.id}
+	adu := &Adu{header, pdu}
+	if _, err := t.connection.Write(adu.Pack()); err != nil {
+		return nil, errors.New("Could not write data")
+	}
+	buff := make([]byte, ADU_LENGTH)
+	l, err := t.connection.Read(buff)
+	if err != nil {
+		return nil, errors.New("Could not read data")
+	}
+	res, err := UnpackAdu(buff[:l])
+	if err != nil {
+		return nil, errors.New("Could receive PDU")
+	}
+	return res.pdu, nil
+}
+
+func NewTcpClient(host string, port uint) (Client, error) {
+	t := &TcpTransporter{host, port, nil, 0, 0}
+	return &MbClient{t}, nil
 }

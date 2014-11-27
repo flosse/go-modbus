@@ -6,6 +6,12 @@
 
 package modbus
 
+type Transporter interface {
+	Connect() error
+	Close() error
+	Send(pdu *Pdu) (*Pdu, error)
+}
+
 type Client interface {
 
 	/**************
