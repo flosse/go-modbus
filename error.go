@@ -16,5 +16,5 @@ type Error struct {
 }
 
 func (e Error) Error() string {
-	return fmt.Sprintf("Modbus error: %d; Exception: d%", e.code, e.exception)
+	return fmt.Sprintf("Modbus error: %d; Exception: %d", e.code, e.exception)
 }
