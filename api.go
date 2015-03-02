@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014, Markus Kohlhase <mail@markus-kohlhase.de>
+ * Copyright (C) 2014 - 2015, Markus Kohlhase <mail@markus-kohlhase.de>
  *
  * Modbus API
  */
@@ -13,6 +13,22 @@ type Transporter interface {
 }
 
 type Client interface {
+
+	/********************
+	 * Abstract Objects *
+	 ********************/
+
+	// Discrete input
+	DiscreteInput(address uint16) DiscreteInput
+
+	// Coil
+	Coil(address uint16) Coil
+
+	// Input Register
+	InputRegister(address uint16) InputRegister
+
+	// Holding Register
+	HoldingRegister(address uint16) HoldingRegister
 
 	/**************
 	 * Bit access *
@@ -41,25 +57,25 @@ type Client interface {
 	/* Physical Input Registers */
 
 	// Function Code 4
-	ReadInputRegisters(address, quantity uint16) (readRegisters []int16, err error)
+	ReadInputRegisters(address, quantity uint16) (readRegisters []uint16, err error)
 
 	// Function Code 3
-	ReadHoldingRegisters(address, quantity uint16) (readRegisters []int16, err error)
+	ReadHoldingRegisters(address, quantity uint16) (readRegisters []uint16, err error)
 
 	// Function Code 6
-	WriteSingleRegister(address uint16, value int16) error
+	WriteSingleRegister(address, value uint16) error
 
 	// Function Code 16
-	WriteMultipleRegisters(address, quantity uint16, values []int16) error
+	WriteMultipleRegisters(address uint16, values []uint16) error
 
 	// Function Code 23
-	ReadWriteMultipleRegisters(readAddress, readQuantity, writeAddress, writeQuantity uint16, values []int16) (readRegisters []int16, err error)
+	ReadWriteMultipleRegisters(readAddress, readQuantity, writeAddress uint16, values []uint16) (readRegisters []uint16, err error)
 
 	// Function Code 22
-	MaskWriteRegister(address uint16, andMask, orMask int16) error
+	MaskWriteRegister(address, andMask, orMask uint16) error
 
 	// Function Code 24
-	ReadFifoQueue(address uint16) (count uint16, values []int16, err error)
+	ReadFifoQueue(address uint16) (values []uint16, err error)
 
 	/**********************
 	 * File record access *
@@ -73,6 +89,26 @@ type Client interface {
 
 	// TODO: specify methods
 
+}
+
+type DiscreteInput interface {
+	Test() (bool, error)
+}
+
+type Coil interface {
+	DiscreteInput
+	Set() error
+	Clear() error
+	Toggle() error
+}
+
+type InputRegister interface {
+	Read() (uint16, error)
+}
+
+type HoldingRegister interface {
+	InputRegister
+	Write(uint16) error
 }
 
 type Handler interface {
