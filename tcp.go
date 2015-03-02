@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014, Markus Kohlhase <mail@markus-kohlhase.de>
+ * Copyright (C) 2014 - 2015, Markus Kohlhase <mail@markus-kohlhase.de>
  */
 
 package modbus
@@ -13,12 +13,12 @@ import (
 )
 
 const (
-	ADU_LENGTH      = 260
-	HEADER_LENGTH   = 7
-	TCP_PROTOCOL_ID = 0
+	aduLength     = 260
+	headerLength  = 7
+	tcpProtocolId = 0
 )
 
-type Header struct {
+type header struct {
 
 	// Transaction Identifier
 	transaction uint16
@@ -33,26 +33,26 @@ type Header struct {
 	unit uint8
 }
 
-type Adu struct {
-	header *Header
+type adu struct {
+	header *header
 	pdu    *Pdu
 }
 
-func (adu *Adu) Pack() []byte {
-	return append(adu.header.Pack(), adu.pdu.Pack()...)
+func (adu *adu) pack() []byte {
+	return append(adu.header.pack(), adu.pdu.pack()...)
 }
 
-func (h *Header) Pack() []byte {
+func (h *header) pack() []byte {
 	buff := bytes.NewBuffer([]byte{})
 	binary.Write(buff, binary.BigEndian, h)
 	return buff.Bytes()
 }
 
-func UnpackHeader(data []byte) (*Header, error) {
-	if len(data) < 7 {
+func unpackHeader(data []byte) (*header, error) {
+	if len(data) < headerLength {
 		return nil, errors.New("Invalid header length")
 	}
-	return &Header{
+	return &header{
 		binary.BigEndian.Uint16(data[0:2]),
 		binary.BigEndian.Uint16(data[2:4]),
 		binary.BigEndian.Uint16(data[4:6]),
@@ -60,22 +60,22 @@ func UnpackHeader(data []byte) (*Header, error) {
 	}, nil
 }
 
-func UnpackAdu(data []byte) (*Adu, error) {
+func unpackAdu(data []byte) (*adu, error) {
 	if len(data) < 8 {
 		return nil, errors.New("Invalid ADU length")
 	}
-	pdu, err := UnpackPdu(data[7:])
+	pdu, err := unpackPdu(data[headerLength:])
 	if err != nil {
 		return nil, err
 	}
-	header, err := UnpackHeader(data[0:7])
+	header, err := unpackHeader(data[0:headerLength])
 	if err != nil {
 		return nil, err
 	}
-	return &Adu{header, pdu}, nil
+	return &adu{header, pdu}, nil
 }
 
-type TcpTransporter struct {
+type tcpTransporter struct {
 	host        string
 	port        uint
 	connection  net.Conn
@@ -83,7 +83,7 @@ type TcpTransporter struct {
 	id          uint8
 }
 
-func (t *TcpTransporter) Connect() error {
+func (t *tcpTransporter) Connect() error {
 	conn, err := net.Dial("tcp", t.host+":"+strconv.Itoa(int(t.port)))
 	if err != nil {
 		return err
@@ -92,38 +92,38 @@ func (t *TcpTransporter) Connect() error {
 	return nil
 }
 
-func (t *TcpTransporter) Close() error {
+func (t *tcpTransporter) Close() error {
 	if t.connection != nil {
 		return t.connection.Close()
 	}
 	return errors.New("Not connected")
 }
 
-func (t *TcpTransporter) Send(pdu *Pdu) (*Pdu, error) {
+func (t *tcpTransporter) Send(pdu *Pdu) (*Pdu, error) {
 	if t.connection == nil {
 		if err := t.Connect(); err != nil {
 			return nil, err
 		}
 	}
 	t.transaction++
-	header := &Header{t.transaction, TCP_PROTOCOL_ID, uint16(len(pdu.data) + 1), t.id}
-	adu := &Adu{header, pdu}
-	if _, err := t.connection.Write(adu.Pack()); err != nil {
+	header := &header{t.transaction, tcpProtocolId, uint16(len(pdu.Data) + 2), t.id}
+	adu := &adu{header, pdu}
+	if _, err := t.connection.Write(adu.pack()); err != nil {
 		return nil, errors.New("Could not write data")
 	}
-	buff := make([]byte, ADU_LENGTH)
+	buff := make([]byte, aduLength)
 	l, err := t.connection.Read(buff)
 	if err != nil {
-		return nil, errors.New("Could not read data")
+		return nil, errors.New("Could not receive data")
 	}
-	res, err := UnpackAdu(buff[:l])
+	res, err := unpackAdu(buff[:l])
 	if err != nil {
-		return nil, errors.New("Could receive PDU")
+		return nil, errors.New("Could not read PDU")
 	}
 	return res.pdu, nil
 }
 
 func NewTcpClient(host string, port uint) (Client, error) {
-	t := &TcpTransporter{host, port, nil, 0, 0}
-	return &MbClient{t}, nil
+	t := &tcpTransporter{host, port, nil, 0, 0}
+	return &mbClient{t}, nil
 }

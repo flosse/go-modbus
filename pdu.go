@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014, Markus Kohlhase <mail@markus-kohlhase.de>
+ * Copyright (C) 2014 - 2015, Markus Kohlhase <mail@markus-kohlhase.de>
  */
 
 package modbus
@@ -8,24 +8,24 @@ import (
 	"errors"
 )
 
-const PDU_LENGTH = 253
-
 type Pdu struct {
 
 	// Function Code
-	function uint8
+	Function uint8
 
 	// PDU data
-	data []byte
+	Data []byte
 }
 
-func (pdu *Pdu) Pack() []byte {
-	buff := make([]byte, 1, PDU_LENGTH)
-	buff[0] = pdu.function
-	return append(buff, pdu.data...)
+const pduLength = 253
+
+func (pdu *Pdu) pack() []byte {
+	buff := make([]byte, 1, pduLength)
+	buff[0] = pdu.Function
+	return append(buff, pdu.Data...)
 }
 
-func UnpackPdu(data []byte) (*Pdu, error) {
+func unpackPdu(data []byte) (*Pdu, error) {
 	if len(data) < 1 {
 		return nil, errors.New("Invalid PDU length")
 	}

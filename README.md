@@ -8,7 +8,14 @@ for [Go](http://golang.org/)
 
 ## Run Tests
 
+    go get github.com/smartystreets/goconvey
     go test
+
+or run
+
+    $GOPATH/bin/goconvey
+
+and open `http://localhost:8080` in your browser
 
 ## License
 

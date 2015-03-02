@@ -2,86 +2,134 @@ package modbus
 
 import (
 	"encoding/binary"
+	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
-func Test_Header_Pack(t *testing.T) {
+func Test_Tcp(t *testing.T) {
+	Convey("Given a header struct", t, func() {
+		header := &header{1234, 99, 42, 9}
 
-	bin := (&Header{1234, 99, 42, 9}).Pack()
+		Convey("When we pack it", func() {
+			bin := header.pack()
 
-	if len(bin) != 7 {
-		t.Error("invalid binary length")
-	}
-	if binary.BigEndian.Uint16(bin[0:2]) != 1234 {
-		t.Error("invalid transaction number")
-	}
-	if binary.BigEndian.Uint16(bin[2:4]) != 99 {
-		t.Error("invalid protocol id")
-	}
-	if binary.BigEndian.Uint16(bin[4:6]) != 42 {
-		t.Error("invalid pdu lengh")
-	}
-	if bin[6] != 9 {
-		t.Error("invalid uni id")
-	}
-}
+			Convey("The length of the binary array should be 7", func() {
+				So(len(bin), ShouldEqual, 7)
+			})
 
-func Test_UnpackHeader(t *testing.T) {
+			Convey("The transaction number should be encoded as BigEndian uint16", func() {
+				So(binary.BigEndian.Uint16(bin[0:2]), ShouldEqual, 1234)
+			})
 
-	if _, err := UnpackHeader([]byte{0, 0, 0, 0, 0, 0}); err == nil {
-		t.Error("an error should be returned")
-	}
+			Convey("The protocol id should be encoded as BigEndian uint16", func() {
+				So(binary.BigEndian.Uint16(bin[2:4]), ShouldEqual, 99)
+			})
 
-	h, _ := UnpackHeader([]byte{0xff, 0xff, 0, 5, 0, 3, 9})
-	if h.transaction != 65535 {
-		t.Error("invalid transaction id")
-	}
-	if h.protocol != 5 {
-		t.Error("invalid protocol id")
-	}
-	if h.length != 3 {
-		t.Error("invalid pdu length")
-	}
-	if h.unit != 9 {
-		t.Error("invalid unit id")
-	}
-}
+			Convey("The pdu length should be encoded as BigEndian uint16", func() {
+				So(binary.BigEndian.Uint16(bin[4:6]), ShouldEqual, 42)
+			})
 
-func Test_Adu_Pack(t *testing.T) {
-	h := &Header{1, 2, 3, 4}
-	pdu := &Pdu{6, []byte{2, 4}}
-	adu := &Adu{h, pdu}
-	bin := adu.Pack()
-	if len(bin) != 10 {
-		t.Error("invalid binary length")
-	}
-	if bin[6] != 4 {
-		t.Error("invalid header")
-	}
-	if bin[7] != 6 {
-		t.Error("invalid function code field")
-	}
-	if bin[9] != 4 {
-		t.Error("invalid data field")
-	}
-}
+			Convey("The uni id should be the last byte", func() {
+				So(bin[6], ShouldEqual, 9)
+			})
+		})
+	})
 
-func Test_UnpackAdu(t *testing.T) {
+	Convey("Given a invalid binary header", t, func() {
+		header := []byte{0, 0, 0, 0, 0, 0}
 
-	if _, err := UnpackAdu([]byte{0, 0, 0, 0, 0, 0, 0}); err == nil {
-		t.Error("an error should be returned")
-	}
+		Convey("When we unpack it", func() {
+			_, err := unpackHeader(header)
 
-	adu, _ := UnpackAdu([]byte{0, 0x0f, 0, 5, 0, 3, 9, 4, 2})
+			Convey("we should get an error", func() {
+				So(err, ShouldNotBeNil)
+			})
+		})
+	})
 
-	if adu.header.transaction != 15 {
-		t.Error("invalid transaction id")
-	}
-	if adu.pdu.function != 4 {
-		t.Error("invalid function id")
-	}
-	if adu.pdu.data[0] != 2 {
-		t.Error("invalid data field")
-	}
+	Convey("Given a valid binary header", t, func() {
+		header := []byte{0xff, 0xff, 0, 5, 0, 3, 9}
 
+		Convey("When we unpack it", func() {
+			h, err := unpackHeader(header)
+
+			Convey("we should not get an error", func() {
+				So(err, ShouldBeNil)
+			})
+
+			Convey("the transaction id should be decoded", func() {
+				So(h.transaction, ShouldEqual, 65535)
+			})
+
+			Convey("the protocol id should be decoded", func() {
+				So(h.protocol, ShouldEqual, 5)
+			})
+
+			Convey("the pdu length should be correct", func() {
+				So(h.length, ShouldEqual, 3)
+			})
+
+			Convey("the unit id should be decoded", func() {
+				So(h.unit, ShouldEqual, 9)
+			})
+		})
+	})
+
+	Convey("Given an adu struct", t, func() {
+		adu := &adu{&header{1, 2, 3, 4}, &Pdu{6, []byte{2, 4}}}
+
+		Convey("When we pack it", func() {
+			bin := adu.pack()
+
+			Convey("the byte array length should correct", func() {
+				So(len(bin), ShouldEqual, 10)
+			})
+
+			Convey("the header should be encoded correctly", func() {
+				So(bin[6], ShouldEqual, 4)
+				So(bin[3], ShouldEqual, 2)
+			})
+
+			Convey("the function code should be correct", func() {
+				So(bin[7], ShouldEqual, 6)
+			})
+
+			Convey("the data code should be included", func() {
+				So(bin[9], ShouldEqual, 4)
+			})
+		})
+	})
+
+	Convey("Given an invalid binary adu", t, func() {
+		bin := []byte{0, 0, 0, 0, 0, 0, 0}
+
+		Convey("When we unpack it", func() {
+			_, err := unpackAdu(bin)
+
+			Convey("we should get an error", func() {
+				So(err, ShouldNotBeNil)
+			})
+		})
+	})
+
+	Convey("Given a valid binary adu", t, func() {
+		bin := []byte{0, 0x0f, 0, 5, 0, 3, 9, 4, 2}
+
+		Convey("When we unpack it", func() {
+			adu, err := unpackAdu(bin)
+
+			Convey("we should not get an error", func() {
+				So(err, ShouldBeNil)
+			})
+
+			Convey("the header should be unpacked", func() {
+				So(adu.header.transaction, ShouldEqual, 15)
+			})
+
+			Convey("the pdu should be unpacked", func() {
+				So(adu.pdu.Function, ShouldEqual, 4)
+				So(adu.pdu.Data[0], ShouldEqual, 2)
+			})
+		})
+	})
 }
