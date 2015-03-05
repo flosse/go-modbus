@@ -62,3 +62,7 @@ and open `http://localhost:8080` in your browser
 ## License
 
 This library is licensed under the MIT license
+
+## Credits
+
+This library is inspired by [this modbus library](https://github.com/goburrow/modbus).
