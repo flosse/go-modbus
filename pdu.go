@@ -5,7 +5,7 @@
 package modbus
 
 import (
-	"errors"
+	"fmt"
 )
 
 type Pdu struct {
@@ -19,15 +19,19 @@ type Pdu struct {
 
 const pduLength = 253
 
-func (pdu *Pdu) pack() []byte {
-	buff := make([]byte, 1, pduLength)
-	buff[0] = pdu.Function
-	return append(buff, pdu.Data...)
+func (pdu *Pdu) pack() (bin []byte, err error) {
+	if pdu.Function < 1 {
+		return nil, fmt.Errorf("Invalid function code %d", pdu.Function)
+	}
+	if l := len(pdu.Data); l > pduLength-1 {
+		return nil, fmt.Errorf("Invalid length of data (%d instead of max. %d bytes)", l, pduLength-1)
+	}
+	return append([]byte{pdu.Function}, pdu.Data...), nil
 }
 
 func unpackPdu(data []byte) (*Pdu, error) {
-	if len(data) < 1 {
-		return nil, errors.New("Invalid PDU length")
+	if l := len(data); l < 1 {
+		return nil, fmt.Errorf("Invalid PDU length (%d bytes)", l)
 	}
 	return &Pdu{data[0], data[1:]}, nil
 }

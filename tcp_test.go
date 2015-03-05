@@ -79,7 +79,7 @@ func Test_Tcp(t *testing.T) {
 		adu := &adu{&header{1, 2, 3, 4}, &Pdu{6, []byte{2, 4}}}
 
 		Convey("When we pack it", func() {
-			bin := adu.pack()
+			bin, _ := adu.pack()
 
 			Convey("the byte array length should correct", func() {
 				So(len(bin), ShouldEqual, 10)

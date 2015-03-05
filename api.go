@@ -14,22 +14,6 @@ type Transporter interface {
 
 type Client interface {
 
-	/********************
-	 * Abstract Objects *
-	 ********************/
-
-	// Discrete input
-	DiscreteInput(address uint16) DiscreteInput
-
-	// Coil
-	Coil(address uint16) Coil
-
-	// Input Register
-	InputRegister(address uint16) InputRegister
-
-	// Holding Register
-	HoldingRegister(address uint16) HoldingRegister
-
 	/**************
 	 * Bit access *
 	 **************/
@@ -83,12 +67,59 @@ type Client interface {
 
 	// TODO: specify methods
 
+}
+
+type SerialClient interface {
+
+	// Embed general client API
+	Client
+
 	/***************
 	 * Diagnostics *
 	 **************/
 
-	// TODO: specify methods
+	// Function Code 7
+	ReadExceptionStatus() (states []bool, err error)
 
+	// Function Code 8
+	Diagnostics(subfunction uint16, data []uint16) (response []uint16, err error)
+
+	// Function Code 11
+	GetCommEventCounter() (status bool, count uint16, err error)
+
+	// TODO: specify method
+	// Function Code 12
+	// GetCommEventLog
+
+	// Function Code 17
+	ReportServerId() (response []byte, err error)
+
+	// TODO: specify method
+	// Function Code 43
+	// ReadDeviceIdentification
+
+}
+
+type IoClient interface {
+
+	/********************
+	 * Abstract Objects *
+	 ********************/
+
+	// Embed general client API
+	Client
+
+	// Discrete input
+	DiscreteInput(address uint16) DiscreteInput
+
+	// Coil
+	Coil(address uint16) Coil
+
+	// Input Register
+	InputRegister(address uint16) InputRegister
+
+	// Holding Register
+	HoldingRegister(address uint16) HoldingRegister
 }
 
 type DiscreteInput interface {

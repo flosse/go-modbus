@@ -38,8 +38,13 @@ type adu struct {
 	pdu    *Pdu
 }
 
-func (adu *adu) pack() []byte {
-	return append(adu.header.pack(), adu.pdu.pack()...)
+func (adu *adu) pack() (bin []byte, err error) {
+	binPdu, err := adu.pdu.pack()
+	if err != nil {
+		return
+	}
+	bin = append(adu.header.pack(), binPdu...)
+	return
 }
 
 func (h *header) pack() []byte {
@@ -107,8 +112,11 @@ func (t *tcpTransporter) Send(pdu *Pdu) (*Pdu, error) {
 	}
 	t.transaction++
 	header := &header{t.transaction, tcpProtocolId, uint16(len(pdu.Data) + 2), t.id}
-	adu := &adu{header, pdu}
-	if _, err := t.connection.Write(adu.pack()); err != nil {
+	binAdu, err := (&adu{header, pdu}).pack()
+	if err != nil {
+		return nil, err
+	}
+	if _, err := t.connection.Write(binAdu); err != nil {
 		return nil, errors.New("Could not write data")
 	}
 	buff := make([]byte, aduLength)
@@ -123,7 +131,7 @@ func (t *tcpTransporter) Send(pdu *Pdu) (*Pdu, error) {
 	return res.pdu, nil
 }
 
-func NewTcpClient(host string, port uint) (Client, error) {
+func NewTcpClient(host string, port uint) (IoClient, error) {
 	t := &tcpTransporter{host, port, nil, 0, 0}
 	return &mbClient{t}, nil
 }
