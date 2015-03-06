@@ -3,8 +3,55 @@ package modbus
 import (
 	"encoding/binary"
 	. "github.com/smartystreets/goconvey/convey"
+	"net"
 	"testing"
+	"time"
 )
+
+type dummyAddr struct{}
+
+func (a *dummyAddr) Network() string {
+	return ""
+}
+
+func (a *dummyAddr) String() string {
+	return ""
+}
+
+type dummyConn struct{}
+
+func (c *dummyConn) Read(b []byte) (n int, err error) {
+	return 0, nil
+}
+
+func (c *dummyConn) Write(b []byte) (n int, err error) {
+	return 0, nil
+
+}
+
+func (c *dummyConn) Close() error {
+	return nil
+}
+
+func (c *dummyConn) LocalAddr() net.Addr {
+	return &dummyAddr{}
+}
+
+func (c *dummyConn) RemoteAddr() net.Addr {
+	return &dummyAddr{}
+}
+
+func (c *dummyConn) SetDeadline(t time.Time) error {
+	return nil
+}
+
+func (c *dummyConn) SetReadDeadline(t time.Time) error {
+	return nil
+}
+
+func (c *dummyConn) SetWriteDeadline(t time.Time) error {
+	return nil
+}
 
 func Test_Tcp(t *testing.T) {
 	Convey("Given a header struct", t, func() {
@@ -130,6 +177,21 @@ func Test_Tcp(t *testing.T) {
 				So(adu.pdu.Function, ShouldEqual, 4)
 				So(adu.pdu.Data[0], ShouldEqual, 2)
 			})
+		})
+	})
+
+	Convey("Given a tcpTransporter", t, func() {
+		tr := &tcpTransporter{"foo", 502, nil, 0, 0}
+		tr.connection = &dummyConn{}
+
+		Convey("when sending a pdu", func() {
+			req := &Pdu{3, nil}
+
+			Convey("the transaction id should be incremented", func() {
+				tr.Send(req)
+				So(tr.transaction, ShouldEqual, 1)
+			})
+
 		})
 	})
 }
