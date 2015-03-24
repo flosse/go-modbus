@@ -97,9 +97,13 @@ func (t *tcpTransporter) Connect() error {
 	return nil
 }
 
-func (t *tcpTransporter) Close() error {
+func (t *tcpTransporter) Close() (err error) {
 	if t.connection != nil {
-		return t.connection.Close()
+		if err = t.connection.Close(); err != nil {
+			return
+		}
+		t.connection = nil
+		return
 	}
 	return errors.New("Not connected")
 }
