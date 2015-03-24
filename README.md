@@ -39,13 +39,25 @@ err = coil.Clear()
 err = coil.Toggle()
 
 /* read-only */
-roRegister := master.InputRegister(5)
-value, err = roRegister.Read()
+roRegister := master.InputRegister(0x2000)
+value, err := roRegister.Read()
+
+/* multiple ro registers */
+multRoRegister := master.InputRegisters(0x1000,7)
+values, err    := roRegister.Read()
+myString, err  := multRoRegister.ReadString()
 
 /* read-write */
-register := master.HoldingRegister(9)
-value, err = register.Read()
+register   := master.HoldingRegister(0x0900)
+value, err := register.Read()
 err = register.Write(0x435)
+
+/* multiple rw registers */
+multRwRegisters := master.HoldingRegisters(0x9000, 3)
+values, err     := multRwRegisters.Read()
+aString, err    := multRwRegisters.ReadString()
+err := multRwRegisters.Write(uint16{3,2,1})
+err =  multRwRegisters.WriteString("foo")
 ```
 
 #### Low Level API

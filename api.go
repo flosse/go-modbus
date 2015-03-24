@@ -145,6 +145,7 @@ type InputRegister interface {
 
 type InputRegisters interface {
 	Read() ([]uint16, error)
+	ReadString() (string, error)
 }
 
 type HoldingRegister interface {
@@ -155,6 +156,7 @@ type HoldingRegister interface {
 type HoldingRegisters interface {
 	InputRegisters
 	Write([]uint16) error
+	WriteString(s string) error
 }
 
 type Handler interface {

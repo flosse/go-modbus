@@ -312,10 +312,35 @@ func (io *roRegisters) Read() (values []uint16, err error) {
 	return io.master.ReadInputRegisters(io.address, io.count)
 }
 
+func (io *roRegisters) ReadString() (s string, err error) {
+	words, err := io.Read()
+	if err != nil {
+		return
+	}
+	s = string(filterNullChar(wordsToByteArray(words...)))
+	return
+}
+
 func (io *rwRegisters) Read() (values []uint16, err error) {
 	return io.master.ReadInputRegisters(io.address, io.count)
 }
 
 func (io *rwRegisters) Write(values []uint16) (err error) {
+	if l := len(values); l > int(io.count) {
+		return fmt.Errorf("Invalid length of words %d", l)
+	}
 	return io.master.WriteMultipleRegisters(io.address, values)
+}
+
+func (io *rwRegisters) ReadString() (s string, err error) {
+	words, err := io.Read()
+	if err != nil {
+		return
+	}
+	s = string(filterNullChar(wordsToByteArray(words...)))
+	return
+}
+
+func (io *rwRegisters) WriteString(s string) (err error) {
+	return io.Write(bytesToWordArray([]byte(s)...))
 }

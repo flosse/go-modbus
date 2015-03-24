@@ -27,3 +27,20 @@ func bytesToWordArray(bytes ...byte) []uint16 {
 	}
 	return array
 }
+
+func filterNullChar(a []byte) []byte {
+	x := filter(a, func(c byte) bool {
+		return c != 0
+	})
+	return x
+}
+
+func filter(s []byte, fn func(byte) bool) []byte {
+	var p []byte // == nil
+	for _, v := range s {
+		if fn(v) {
+			p = append(p, v)
+		}
+	}
+	return p
+}

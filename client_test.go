@@ -367,15 +367,20 @@ func Test_Client(t *testing.T) {
 		})
 
 		Convey("when creating a multi input registers", func() {
-			io, d := getIoClient([]byte{0x02, 0x00, 0x05, 0x00, 0x03}, nil)
+			io, d := getIoClient([]byte{0x02, 0x66, 0x6f, 0x6f}, nil)
 			reg := io.InputRegisters(0x1000, 2)
 
 			Convey("the read method should use function nr 4", func() {
 				x, err := reg.Read()
 				So(d.req.Function, ShouldEqual, 4)
 				So(err, ShouldBeNil)
-				So(x[0], ShouldEqual, 5)
-				So(x[1], ShouldEqual, 3)
+				So(x[0], ShouldEqual, 0x666f)
+				So(x[1], ShouldEqual, 0x6f)
+			})
+
+			Convey("the registers can be read as string", func() {
+				x, _ := reg.ReadString()
+				So(x, ShouldResemble, "foo")
 			})
 		})
 
@@ -387,6 +392,11 @@ func Test_Client(t *testing.T) {
 				err := reg.Write([]uint16{3, 5})
 				So(d.req.Function, ShouldEqual, 16)
 				So(err, ShouldBeNil)
+			})
+
+			Convey("the write method should check the word length", func() {
+				err := reg.Write([]uint16{3, 5, 6})
+				So(err, ShouldNotBeNil)
 			})
 		})
 	})
