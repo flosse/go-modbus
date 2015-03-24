@@ -19,12 +19,16 @@ type mbClient struct {
 type io struct {
 	master  Client
 	address uint16
+	count   uint16
 }
 
 type roBit io
 type rwBit io
+
 type roRegister io
+type roRegisters io
 type rwRegister io
+type rwRegisters io
 
 func (c *mbClient) request(f uint8, addr uint16, data []byte) (pdu *Pdu, err error) {
 	pdu, err = c.transport.Send(&Pdu{f, append(wordsToByteArray(addr), data...)})
@@ -232,19 +236,27 @@ func (c *mbClient) ReportServerId() (response []byte, err error) {
 }
 
 func (c *mbClient) DiscreteInput(addr uint16) DiscreteInput {
-	return &roBit{c, addr}
+	return &roBit{master: c, address: addr}
 }
 
 func (c *mbClient) Coil(addr uint16) Coil {
-	return &rwBit{c, addr}
+	return &rwBit{master: c, address: addr}
 }
 
 func (c *mbClient) InputRegister(addr uint16) InputRegister {
-	return &roRegister{c, addr}
+	return &roRegister{master: c, address: addr}
+}
+
+func (c *mbClient) InputRegisters(addr, count uint16) InputRegisters {
+	return &roRegisters{c, addr, count}
 }
 
 func (c *mbClient) HoldingRegister(addr uint16) HoldingRegister {
-	return &rwRegister{c, addr}
+	return &rwRegister{master: c, address: addr}
+}
+
+func (c *mbClient) HoldingRegisters(addr, count uint16) HoldingRegisters {
+	return &rwRegisters{c, addr, count}
 }
 
 func (io *roBit) Test() (result bool, err error) {
@@ -294,4 +306,16 @@ func (io *rwRegister) Read() (value uint16, err error) {
 
 func (io *rwRegister) Write(value uint16) (err error) {
 	return io.master.WriteSingleRegister(io.address, value)
+}
+
+func (io *roRegisters) Read() (values []uint16, err error) {
+	return io.master.ReadInputRegisters(io.address, io.count)
+}
+
+func (io *rwRegisters) Read() (values []uint16, err error) {
+	return io.master.ReadInputRegisters(io.address, io.count)
+}
+
+func (io *rwRegisters) Write(values []uint16) (err error) {
+	return io.master.WriteMultipleRegisters(io.address, values)
 }

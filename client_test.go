@@ -359,8 +359,33 @@ func Test_Client(t *testing.T) {
 			reg := io.InputRegister(7)
 
 			Convey("the read method should use function nr 4", func() {
-				_, err := reg.Read()
+				x, err := reg.Read()
 				So(d.req.Function, ShouldEqual, 4)
+				So(err, ShouldBeNil)
+				So(x, ShouldEqual, 55877)
+			})
+		})
+
+		Convey("when creating a multi input registers", func() {
+			io, d := getIoClient([]byte{0x02, 0x00, 0x05, 0x00, 0x03}, nil)
+			reg := io.InputRegisters(0x1000, 2)
+
+			Convey("the read method should use function nr 4", func() {
+				x, err := reg.Read()
+				So(d.req.Function, ShouldEqual, 4)
+				So(err, ShouldBeNil)
+				So(x[0], ShouldEqual, 5)
+				So(x[1], ShouldEqual, 3)
+			})
+		})
+
+		Convey("when creating a multi holting registers", func() {
+			io, d := getIoClient([]byte{0x02, 0x00, 0x05, 0x00, 0x03}, nil)
+			reg := io.HoldingRegisters(0x1000, 2)
+
+			Convey("the write method should use function nr x", func() {
+				err := reg.Write([]uint16{3, 5})
+				So(d.req.Function, ShouldEqual, 16)
 				So(err, ShouldBeNil)
 			})
 		})

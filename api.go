@@ -118,8 +118,14 @@ type IoClient interface {
 	// Input Register
 	InputRegister(address uint16) InputRegister
 
+	// Input Registers
+	InputRegisters(address, count uint16) InputRegisters
+
 	// Holding Register
 	HoldingRegister(address uint16) HoldingRegister
+
+	// Holding Registers
+	HoldingRegisters(address, count uint16) HoldingRegisters
 }
 
 type DiscreteInput interface {
@@ -137,9 +143,18 @@ type InputRegister interface {
 	Read() (uint16, error)
 }
 
+type InputRegisters interface {
+	Read() ([]uint16, error)
+}
+
 type HoldingRegister interface {
 	InputRegister
 	Write(uint16) error
+}
+
+type HoldingRegisters interface {
+	InputRegisters
+	Write([]uint16) error
 }
 
 type Handler interface {
