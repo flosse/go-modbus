@@ -42,12 +42,7 @@ func (c *mbClient) readRegisters(fn uint8, addr, count uint16) (values []uint16,
 	if err != nil {
 		return
 	}
-	l := int(res.Data[0])
-	d := res.Data[1:]
-	values = make([]uint16, l/2)
-	for i := 0; i < l/2; i++ {
-		values[i] = uint16(uint16(d[i*2+1]) | uint16(d[i*2])<<8)
-	}
+	values = bytesToWordArray(res.Data[1:]...)
 	return
 }
 
