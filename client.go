@@ -31,9 +31,6 @@ func (c *mbClient) request(f uint8, addr uint16, data []byte) (pdu *Pdu, err err
 	if err != nil {
 		return
 	}
-	if l := len(pdu.Data); l < 2 {
-		return nil, fmt.Errorf("Received invalid data length %d", l)
-	}
 	if errFn := f + 0x80; errFn == pdu.Function {
 		return nil, Error{errFn, pdu.Data[0]}
 	}
