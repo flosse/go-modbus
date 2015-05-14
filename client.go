@@ -322,7 +322,7 @@ func (io *roRegisters) ReadString() (s string, err error) {
 }
 
 func (io *rwRegisters) Read() (values []uint16, err error) {
-	return io.master.ReadInputRegisters(io.address, io.count)
+	return io.master.ReadHoldingRegisters(io.address, io.count)
 }
 
 func (io *rwRegisters) Write(values []uint16) (err error) {
