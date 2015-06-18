@@ -284,10 +284,14 @@ func (io *rwBit) Clear() (err error) {
 }
 
 func (io *rwBit) Toggle() (err error) {
-	if res, err := io.master.ReadCoils(io.address, 1); err == nil {
-		return io.master.WriteSingleCoil(io.address, !res[0])
+	state, err := io.Test()
+	if err != nil {
+		return
 	}
-	return
+	if state {
+		return io.Clear()
+	}
+	return io.Set()
 }
 
 func (io *roRegister) Read() (value uint16, err error) {
