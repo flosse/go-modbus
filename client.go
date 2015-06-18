@@ -131,8 +131,8 @@ func (c *mbClient) WriteMultipleCoils(addr uint16, values []bool) (err error) {
 	if err != nil {
 		return
 	}
-	if binary.BigEndian.Uint16(res.Data[2:]) != uint16(count) {
-		return fmt.Errorf("%d coils were forced instead of %d", count)
+	if c := binary.BigEndian.Uint16(res.Data[2:]); c != uint16(count) {
+		return fmt.Errorf("%d coils were forced instead of %d", c, count)
 	}
 	return
 }
