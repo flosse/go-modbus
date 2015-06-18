@@ -83,33 +83,30 @@ func unpackAdu(data []byte) (*adu, error) {
 type tcpTransporter struct {
 	host        string
 	port        uint
-	connection  net.Conn
+	conn        net.Conn
 	transaction uint16
 	id          uint8
 }
 
 func (t *tcpTransporter) Connect() error {
 	conn, err := net.Dial("tcp", t.host+":"+strconv.Itoa(int(t.port)))
-	if err != nil {
-		return err
-	}
-	t.connection = conn
-	return nil
+	t.conn = conn
+	return err
 }
 
 func (t *tcpTransporter) Close() (err error) {
-	if t.connection != nil {
-		if err = t.connection.Close(); err != nil {
+	if t.conn != nil {
+		if err = t.conn.Close(); err != nil {
 			return
 		}
-		t.connection = nil
+		t.conn = nil
 		return
 	}
 	return errors.New("Not connected")
 }
 
 func (t *tcpTransporter) Send(pdu *Pdu) (*Pdu, error) {
-	if t.connection == nil {
+	if t.conn == nil {
 		if err := t.Connect(); err != nil {
 			return nil, err
 		}
@@ -120,11 +117,11 @@ func (t *tcpTransporter) Send(pdu *Pdu) (*Pdu, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := t.connection.Write(binAdu); err != nil {
+	if _, err := t.conn.Write(binAdu); err != nil {
 		return nil, errors.New("Could not write data")
 	}
 	buff := make([]byte, aduLength)
-	l, err := t.connection.Read(buff)
+	l, err := t.conn.Read(buff)
 	if err != nil {
 		return nil, errors.New("Could not receive data")
 	}

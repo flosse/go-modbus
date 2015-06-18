@@ -182,7 +182,7 @@ func Test_Tcp(t *testing.T) {
 
 	Convey("Given a tcpTransporter", t, func() {
 		tr := &tcpTransporter{"foo", 502, nil, 0, 0}
-		tr.connection = &dummyConn{}
+		tr.conn = &dummyConn{}
 
 		Convey("when sending a pdu", func() {
 			req := &Pdu{3, nil}
