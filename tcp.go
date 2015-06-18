@@ -132,7 +132,6 @@ func (t *tcpTransporter) Send(pdu *Pdu) (*Pdu, error) {
 	return res.pdu, nil
 }
 
-func NewTcpClient(host string, port uint) (IoClient, error) {
-	t := &tcpTransporter{host, port, nil, 0, 0}
-	return &mbClient{t}, nil
+func NewTcpClient(host string, port uint) IoClient {
+	return &mbClient{&tcpTransporter{host, port, nil, 0, 0}}
 }
