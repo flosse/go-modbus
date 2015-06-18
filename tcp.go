@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"net"
 	"strconv"
 )
@@ -54,8 +55,8 @@ func (h *header) pack() []byte {
 }
 
 func unpackHeader(data []byte) (*header, error) {
-	if len(data) < headerLength {
-		return nil, errors.New("Invalid header length")
+	if l := len(data); l < headerLength {
+		return nil, fmt.Errorf("Invalid header length: %d byte", l)
 	}
 	return &header{
 		binary.BigEndian.Uint16(data[0:2]),
@@ -66,8 +67,8 @@ func unpackHeader(data []byte) (*header, error) {
 }
 
 func unpackAdu(data []byte) (*adu, error) {
-	if len(data) < 8 {
-		return nil, errors.New("Invalid ADU length")
+	if l := len(data); l < 8 {
+		return nil, fmt.Errorf("Invalid ADU length: %d byte", l)
 	}
 	pdu, err := unpackPdu(data[headerLength:])
 	if err != nil {
@@ -118,20 +119,23 @@ func (t *tcpTransporter) Send(pdu *Pdu) (*Pdu, error) {
 		return nil, err
 	}
 	if _, err := t.conn.Write(binAdu); err != nil {
-		return nil, errors.New("Could not write data")
+		return nil, fmt.Errorf("Could not write data: %s", err)
 	}
 	buff := make([]byte, aduLength)
 	l, err := t.conn.Read(buff)
 	if err != nil {
-		return nil, errors.New("Could not receive data")
+		return nil, fmt.Errorf("Could not receive data: %s", err)
 	}
 	res, err := unpackAdu(buff[:l])
 	if err != nil {
-		return nil, errors.New("Could not read PDU")
+		return nil, fmt.Errorf("Could not read PDU: %s", err)
+	}
+	if i := res.header.transaction; i != t.transaction {
+		return nil, fmt.Errorf("Invalid transaction id: %d instead of %d", i, t.transaction)
 	}
 	return res.pdu, nil
 }
 
 func NewTcpClient(host string, port uint) IoClient {
-	return &mbClient{&tcpTransporter{host, port, nil, 0, 0}}
+	return &mbClient{&tcpTransporter{host: host, port: port}}
 }

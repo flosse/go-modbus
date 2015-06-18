@@ -18,9 +18,14 @@ func (a *dummyAddr) String() string {
 	return ""
 }
 
-type dummyConn struct{}
+type dummyConn struct {
+	respond func([]byte) (int, error)
+}
 
 func (c *dummyConn) Read(b []byte) (n int, err error) {
+	if c.respond != nil {
+		return c.respond(b)
+	}
 	return 0, nil
 }
 
@@ -181,7 +186,7 @@ func Test_Tcp(t *testing.T) {
 	})
 
 	Convey("Given a tcpTransporter", t, func() {
-		tr := &tcpTransporter{"foo", 502, nil, 0, 0}
+		tr := &tcpTransporter{host: "foo", port: 502}
 		tr.conn = &dummyConn{}
 
 		Convey("when sending a pdu", func() {
@@ -192,6 +197,22 @@ func Test_Tcp(t *testing.T) {
 				So(tr.transaction, ShouldEqual, 1)
 			})
 
+			Convey("the received transaction id should be checked", func() {
+				tr.conn = &dummyConn{respond: func(b []byte) (int, error) {
+					adu := &adu{
+						header: &header{transaction: 2, length: 8},
+						pdu:    &Pdu{2, nil},
+					}
+					bin, _ := adu.pack()
+					for idx, v := range bin {
+						b[idx] = v
+					}
+					return 8, nil
+				}}
+				_, err := tr.Send(req)
+				So(tr.transaction, ShouldEqual, 1)
+				So(err, ShouldNotEqual, nil)
+			})
 		})
 	})
 }
