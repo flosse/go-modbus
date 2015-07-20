@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"time"
 )
 
 const (
@@ -87,12 +88,20 @@ type tcpTransporter struct {
 	conn        net.Conn
 	transaction uint16
 	id          uint8
+	timeout     time.Duration
 }
 
 func (t *tcpTransporter) Connect() error {
-	conn, err := net.Dial("tcp", t.host+":"+strconv.Itoa(int(t.port)))
-	t.conn = conn
-	return err
+	address := t.host + ":" + strconv.Itoa(int(t.port))
+	if t.timeout > 0 {
+		conn, err := net.DialTimeout("tcp", address, t.timeout)
+		t.conn = conn
+		return err
+	} else {
+		conn, err := net.Dial("tcp", address)
+		t.conn = conn
+		return err
+	}
 }
 
 func (t *tcpTransporter) Close() (err error) {
@@ -138,4 +147,8 @@ func (t *tcpTransporter) Send(pdu *Pdu) (*Pdu, error) {
 
 func NewTcpClient(host string, port uint) IoClient {
 	return &mbClient{&tcpTransporter{host: host, port: port}}
+}
+
+func NewTcpClientTimeout(host string, port uint, timeout time.Duration) IoClient {
+	return &mbClient{&tcpTransporter{host: host, port: port, timeout: timeout}}
 }
