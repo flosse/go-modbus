@@ -73,6 +73,10 @@ func (c *mbClient) ReadDiscreteInputs(addr, count uint16) (result []bool, err er
 	return
 }
 
+func (c *mbClient) Transporter() Transporter {
+	return c.transport
+}
+
 func (c *mbClient) ReadCoils(addr, count uint16) (coils []bool, err error) {
 	res, err := c.request(1, addr, wordsToByteArray(count))
 	if err != nil {

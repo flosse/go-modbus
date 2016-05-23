@@ -14,6 +14,10 @@ type Transporter interface {
 
 type Client interface {
 
+	/* Access to transporter layer */
+
+	Transporter() Transporter
+
 	/**************
 	 * Bit access *
 	 **************/
