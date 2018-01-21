@@ -4,6 +4,8 @@
 [![GoDoc](https://godoc.org/github.com/flosse/go-modbus?status.svg)](https://godoc.org/github.com/flosse/go-modbus)
 [![Coverage Status](https://coveralls.io/repos/flosse/go-modbus/badge.svg?branch=master)](https://coveralls.io/r/flosse/go-modbus?branch=master)
 
+**DONT USE IT**: This was a proof-of-concept!
+
 a free [Modbus](http://en.wikipedia.org/wiki/Modbus) library
 for [Go](http://golang.org/).
 
